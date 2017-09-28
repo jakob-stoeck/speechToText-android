@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">SpeechToText</string>
+    <string name="last_message">Your last message will appear here</string>
+</resources>
