@@ -19,11 +19,16 @@
             <intent-filter>
                 <action android:name="android.intent.action.SEND"/>
                 <category android:name="android.intent.category.DEFAULT"/>
-                <data android:mimeType="text/plain"/>
-                <data android:mimeType="audio/*"/>
+                <data android:mimeType="text/plain" /> <!-- TODO remove when finished testing -->
+                <data android:mimeType="audio/ogg" />
+                <data android:mimeType="audio/opus" />
+                <data android:mimeType="audio/vorbis" />
+                <data android:mimeType="audio/flac" />
+                <data android:mimeType="audio/amr" />
+                <data android:mimeType="audio/amr-wb" />
+                <data android:mimeType="audio/speex" />
             </intent-filter>
         </activity>
-        <service android:name=".SpeechRecognitionService"/>
         <service android:name=".SpeechService"/>
     </application>
 </manifest>

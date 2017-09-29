@@ -16,22 +16,25 @@
 
 package de.jakobstoeck.speechtotext;
 
+import android.app.IntentService;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.google.auth.Credentials;
@@ -58,7 +61,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -76,8 +81,28 @@ import io.grpc.internal.DnsNameResolverProvider;
 import io.grpc.okhttp.OkHttpChannelProvider;
 import io.grpc.stub.StreamObserver;
 
+/**
+ * Bind to this service if you need to get the Service object, e.g. in a test
+ * <p><blockquote><pre>
+ *     Intent serviceIntent = new Intent(InstrumentationRegistry.getTargetContext(), SpeechService.class);
+ *     IBinder binder = mServiceRule.bindService(serviceIntent);
+ *     SpeechService sv = SpeechService.from(binder);
+ *     sv.addListener(listener);
+ *     sv.recognizeInputStream(in);
+ * </pre></blockquote></p>
+ * <p>
+ * Else just start it with an explicit intent including the uri of the audio
+ * <p><blockquote><pre>
+ *     Intent serviceIntent = new Intent(this, SpeechService.class);
+ *     serviceIntent.putExtra(Intent.EXTRA_STREAM, uri);
+ *     startService(serviceIntent);
+ * </pre></blockquote></p>
+ */
+public class SpeechService extends IntentService {
 
-public class SpeechService extends Service {
+    public SpeechService() {
+        super("SpeechService");
+    }
 
     public interface Listener {
 
@@ -112,7 +137,6 @@ public class SpeechService extends Service {
     private volatile AccessTokenTask mAccessTokenTask;
     private SpeechGrpc.SpeechStub mApi;
     private static Handler mHandler;
-    private static final int NOTIFICATION_ID = 1;
 
     private final StreamObserver<StreamingRecognizeResponse> mResponseObserver
             = new StreamObserver<StreamingRecognizeResponse>() {
@@ -174,6 +198,20 @@ public class SpeechService extends Service {
         @Override
         public void onCompleted() {
             Log.i(TAG, "API completed.");
+            mHandler.removeCallbacks(mFetchAccessTokenRunnable);
+            mHandler = null;
+            // Release the gRPC channel.
+            if (mApi != null) {
+                final ManagedChannel channel = (ManagedChannel) mApi.getChannel();
+                if (channel != null && !channel.isShutdown()) {
+                    try {
+                        channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
+                    } catch (InterruptedException e) {
+                        Log.e(TAG, "Error shutting down the gRPC channel.", e);
+                    }
+                }
+                mApi = null;
+            }
         }
 
     };
@@ -192,81 +230,63 @@ public class SpeechService extends Service {
     }
 
     private String createNotificationChannel() {
-//        https://developer.android.com/guide/topics/ui/notifiers/notifications.html
-        String id = "speech_to_text";
+        final String id = "speech_to_text";
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             NotificationManager mNotificationManager =
                     (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            CharSequence name = "Spracherkennung Name";
-            String description = "Spracherkennung Desc";
-            int importance = NotificationManager.IMPORTANCE_HIGH;
+            CharSequence name = getResources().getText(R.string.channel_title);
+            String description = getResources().getString(R.string.channel_description);
             NotificationChannel mChannel;
-            mChannel = new NotificationChannel(id, name, importance);
+            mChannel = new NotificationChannel(id, name, NotificationManager.IMPORTANCE_HIGH);
             mChannel.setDescription(description);
+            mChannel.enableLights(false);
+            mChannel.enableVibration(false);
+            mChannel.setImportance(NotificationManager.IMPORTANCE_LOW);
             mNotificationManager.createNotificationChannel(mChannel);
         }
         return id;
     }
 
     @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
+    protected void onHandleIntent(@Nullable Intent intent) {
         Intent notificationIntent = new Intent(this, MainActivity.class);
         final PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
-        final String channel = createNotificationChannel();
-        Notification notification = new NotificationCompat.Builder(this, channel)
+        final String channelId = createNotificationChannel();
+        Random r = new Random();
+        final int notificationId = r.nextInt();
+        final String curLanguage = getDefaultLanguageCode();
+        // XXX Android O still plays a sound for this notification. I tried
+        // .setPriority(NotificationCompat.PRIORITY_MAX), .setDefaults(0), .setSound(null) or
+        // .setImportance(NotificationManager.IMPORTANCE_LOW) on the channel. Nothing works.
+        Notification notification = new NotificationCompat.Builder(this, channelId)
                 .setSmallIcon(R.drawable.notification_icon)
-                .setContentTitle("Spracherkennung title")
-                .setPriority(NotificationCompat.PRIORITY_MAX)
-                .setDefaults(Notification.DEFAULT_ALL)
-                .setContentText("Bitte warten …")
+                .setContentTitle(getResources().getString(R.string.notification_title, curLanguage))
+                .setContentText(getResources().getText(R.string.notification_text_please_wait))
                 .setContentIntent(pendingIntent)
-                .setTicker("Spracherkennung Ticker")
+                .setDefaults(0)
+                .setSound(null)
+                .setOnlyAlertOnce(true)
+                .setTicker(getResources().getText(R.string.app_name))
                 .build();
         addListener(new Listener() {
             @Override
             public void onSpeechRecognized(String text, boolean isFinal) {
-                Notification notification = new NotificationCompat.Builder(SpeechService.this, channel)
+                Notification notification = new NotificationCompat.Builder(SpeechService.this, channelId)
                         .setSmallIcon(R.drawable.notification_icon)
-                        .setContentTitle("Spracherkennung title")
-                        .setPriority(NotificationCompat.PRIORITY_MAX)
-                        .setDefaults(Notification.DEFAULT_ALL)
+                        .setContentTitle(getResources().getString(R.string.notification_title, curLanguage))
                         .setContentText(text)
                         .setContentIntent(pendingIntent)
+                        .setDefaults(0)
+                        .setSound(null)
+                        .setOnlyAlertOnce(true)
                         .build();
                 NotificationManager mNotifyMgr = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                mNotifyMgr.notify(NOTIFICATION_ID, notification);
+                mNotifyMgr.notify(notificationId, notification);
             }
         });
-        startForeground(NOTIFICATION_ID, notification);
-        try {
-            Uri uri = (Uri) intent.getExtras().get(Intent.EXTRA_STREAM);
-            InputStream in = getContentResolver().openInputStream(uri);
-            BufferedInputStream bin = new BufferedInputStream(in);
-            recognizeInputStream(bin);
-        } catch (FileNotFoundException e) {
-            Log.e(TAG, "Could not open audio file.", e);
-            stopSelf();
-        }
-        return START_REDELIVER_INTENT;
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        mHandler.removeCallbacks(mFetchAccessTokenRunnable);
-        mHandler = null;
-        // Release the gRPC channel.
-        if (mApi != null) {
-            final ManagedChannel channel = (ManagedChannel) mApi.getChannel();
-            if (channel != null && !channel.isShutdown()) {
-                try {
-                    channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
-                } catch (InterruptedException e) {
-                    Log.e(TAG, "Error shutting down the gRPC channel.", e);
-                }
-            }
-            mApi = null;
-        }
+        startForeground(notificationId, notification);
+        Uri uri = (Uri) intent.getExtras().get(Intent.EXTRA_STREAM);
+        recognizeUri(uri, intent.getType());
     }
 
     private void fetchAccessToken() {
@@ -283,17 +303,25 @@ public class SpeechService extends Service {
         }
     }
 
+    /**
+     * get preferred language from settings
+     * if not available fall back to locale
+     *
+     * @return language code e.g. "en-US"
+     */
     private String getDefaultLanguageCode() {
-        // TODO logic for language
-        return "de-DE";
-//        final Locale locale = Locale.getDefault();
-//        final StringBuilder language = new StringBuilder(locale.getLanguage());
-//        final String country = locale.getCountry();
-//        if (!TextUtils.isEmpty(country)) {
-//            language.append("-");
-//            language.append(country);
-//        }
-//        return language.toString();
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        String langCode = sharedPref.getString(SettingsFragment.LANGUAGE_PREF_KEY, null);
+        if (langCode != null) return langCode;
+
+        final Locale locale = Locale.getDefault();
+        final StringBuilder language = new StringBuilder(locale.getLanguage());
+        final String country = locale.getCountry();
+        if (!TextUtils.isEmpty(country)) {
+            language.append("-");
+            language.append(country);
+        }
+        return language.toString();
     }
 
     @Nullable
@@ -313,9 +341,9 @@ public class SpeechService extends Service {
     /**
      * Starts recognizing speech audio.
      *
-     * @param sampleRate The sample rate of the audio.
+     * @param encoding The audio encoding.
      */
-    public void startRecognizing(int sampleRate) {
+    public void startRecognizing(RecognitionConfig.AudioEncoding encoding) {
         if (mApi == null) {
             Log.w(TAG, "API not authenticated. Ignoring the request.");
             return;
@@ -326,8 +354,8 @@ public class SpeechService extends Service {
                 .setStreamingConfig(StreamingRecognitionConfig.newBuilder()
                         .setConfig(RecognitionConfig.newBuilder()
                                 .setLanguageCode(getDefaultLanguageCode())
-                                .setEncoding(RecognitionConfig.AudioEncoding.OGG_OPUS)
-                                .setSampleRateHertz(sampleRate)
+                                .setEncoding(encoding)
+                                .setSampleRateHertz(16000)
                                 .build())
                         .setInterimResults(true)
                         .setSingleUtterance(true)
@@ -363,14 +391,52 @@ public class SpeechService extends Service {
         mRequestObserver = null;
     }
 
+    public void recognizeUri(Uri uri, String type) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            type = Intent.normalizeMimeType(type);
+        }
+        RecognitionConfig.AudioEncoding encoding;
+        switch (type) {
+            case "audio/ogg":
+            case "audio/opus":
+            case "audio/vorbis":
+                encoding = RecognitionConfig.AudioEncoding.OGG_OPUS;
+                break;
+            case "audio/flac":
+                encoding = RecognitionConfig.AudioEncoding.FLAC;
+                break;
+            case "audio/amr":
+                encoding = RecognitionConfig.AudioEncoding.AMR;
+                break;
+            case "audio/amr-wb":
+                encoding = RecognitionConfig.AudioEncoding.AMR_WB;
+                break;
+            case "audio/speex":
+                encoding = RecognitionConfig.AudioEncoding.SPEEX_WITH_HEADER_BYTE;
+                break;
+            default:
+                Log.e(TAG, "MIME Type not supported: " + type);
+                return;
+        }
+        try {
+            InputStream bin = new BufferedInputStream(getContentResolver().openInputStream(uri));
+            recognizeInputStream(bin, encoding);
+            bin.close();
+        } catch (FileNotFoundException e) {
+            Log.e(TAG, "Could not open audio file", e);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     /**
      * Recognize all data from the specified {@link InputStream}.
      *
      * @param stream The audio data.
      */
-    public void recognizeInputStream(InputStream stream) {
+    public void recognizeInputStream(InputStream stream, RecognitionConfig.AudioEncoding encoding) {
         final int CHUNK_LENGTH = 2048;
-        startRecognizing(16000);
+        startRecognizing(encoding);
         final byte[] bytes = new byte[CHUNK_LENGTH];
         int len;
         try {

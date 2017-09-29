@@ -1,4 +1,11 @@
 <resources>
-    <string name="app_name">SpeechToText</string>
+    <string name="app_name">That’s what she said</string>
     <string name="last_message">Your last message will appear here</string>
+    <string name="channel_title">Speech Recognition.</string>
+    <string name="channel_description">Text of voice messages appears in this channel.</string>
+    <string name="notification_text_please_wait">Please wait …</string>
+    <string name="notification_ticker">Please wait …</string>
+    <string name="pref_language_default">en-US</string>
+    <string name="pref_language_title">Change Language</string>
+    <string name="notification_title">Current language: %1$s. Tap to change.</string>
 </resources>

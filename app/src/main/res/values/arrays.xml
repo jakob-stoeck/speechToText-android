@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="pref_syncConnectionTypes_entries">
+        <item>Afrikaans (Suid-Afrika)</item>
+        <item>Bahasa Indonesia (Indonesia)</item>
+        <item>Bahasa Melayu (Malaysia)</item>
+        <item>Català (Espanya)</item>
+        <item>Čeština (Česká republika)</item>
+        <item>Dansk (Danmark)</item>
+        <item>Deutsch (Deutschland)</item>
+        <item>English (Australia)</item>
+        <item>English (Canada)</item>
+        <item>English (Great Britain)</item>
+        <item>English (India)</item>
+        <item>English (Ireland)</item>
+        <item>English (New Zealand)</item>
+        <item>English (Philippines)</item>
+        <item>English (South Africa)</item>
+        <item>English (United States)</item>
+        <item>Español (Argentina)</item>
+        <item>Español (Bolivia)</item>
+        <item>Español (Chile)</item>
+        <item>Español (Colombia)</item>
+        <item>Español (Costa Rica)</item>
+        <item>Español (Ecuador)</item>
+        <item>Español (El Salvador)</item>
+        <item>Español (España)</item>
+        <item>Español (Estados Unidos)</item>
+        <item>Español (Guatemala)</item>
+        <item>Español (Honduras)</item>
+        <item>Español (México)</item>
+        <item>Español (Nicaragua)</item>
+        <item>Español (Panamá)</item>
+        <item>Español (Paraguay)</item>
+        <item>Español (Perú)</item>
+        <item>Español (Puerto Rico)</item>
+        <item>Español (República Dominicana)</item>
+        <item>Español (Uruguay)</item>
+        <item>Español (Venezuela)</item>
+        <item>Euskara (Espainia)</item>
+        <item>Filipino (Pilipinas)</item>
+        <item>Français (Canada)</item>
+        <item>Français (France)</item>
+        <item>Galego (España)</item>
+        <item>Hrvatski (Hrvatska)</item>
+        <item>IsiZulu (Ningizimu Afrika)</item>
+        <item>Íslenska (Ísland)</item>
+        <item>Italiano (Italia)</item>
+        <item>Lietuvių (Lietuva)</item>
+        <item>Magyar (Magyarország)</item>
+        <item>Nederlands (Nederland)</item>
+        <item>Norsk bokmål (Norge)</item>
+        <item>Polski (Polska)</item>
+        <item>Português (Brasil)</item>
+        <item>Português (Portugal)</item>
+        <item>Română (România)</item>
+        <item>Slovenčina (Slovensko)</item>
+        <item>Slovenščina (Slovenija)</item>
+        <item>Suomi (Suomi)</item>
+        <item>Svenska (Sverige)</item>
+        <item>Tiếng Việt (Việt Nam)</item>
+        <item>Türkçe (Türkiye)</item>
+        <item>Ελληνικά (Ελλάδα)</item>
+        <item>Български (България)</item>
+        <item>Русский (Россия)</item>
+        <item>Српски (Србија)</item>
+        <item>Українська (Україна)</item>
+        <item>עברית (ישראל)</item>
+        <item>العربية (إسرائيل)</item>
+        <item>العربية (الأردن)</item>
+        <item>العربية (الإمارات)</item>
+        <item>العربية (البحرين)</item>
+        <item>العربية (الجزائر)</item>
+        <item>العربية (السعودية)</item>
+        <item>العربية (العراق)</item>
+        <item>العربية (الكويت)</item>
+        <item>العربية (المغرب)</item>
+        <item>العربية (تونس)</item>
+        <item>العربية (عُمان)</item>
+        <item>العربية (فلسطين)</item>
+        <item>العربية (قطر)</item>
+        <item>العربية (لبنان)</item>
+        <item>العربية (مصر)</item>
+        <item>فارسی (ایران)</item>
+        <item>हिन्दी (भारत)</item>
+        <item>ไทย (ประเทศไทย)</item>
+        <item>한국어 (대한민국)</item>
+        <item>國語 (台灣)</item>
+        <item>廣東話 (香港)</item>
+        <item>日本語（日本）</item>
+        <item>普通話 (香港)</item>
+        <item>普通话 (中国大陆)</item>
+    </string-array>
+    <string-array name="pref_syncConnectionTypes_values">
+        <item>af-ZA</item>
+        <item>id-ID</item>
+        <item>ms-MY</item>
+        <item>ca-ES</item>
+        <item>cs-CZ</item>
+        <item>da-DK</item>
+        <item>de-DE</item>
+        <item>en-AU</item>
+        <item>en-CA</item>
+        <item>en-GB</item>
+        <item>en-IN</item>
+        <item>en-IE</item>
+        <item>en-NZ</item>
+        <item>en-PH</item>
+        <item>en-ZA</item>
+        <item>en-US</item>
+        <item>es-AR</item>
+        <item>es-BO</item>
+        <item>es-CL</item>
+        <item>es-CO</item>
+        <item>es-CR</item>
+        <item>es-EC</item>
+        <item>es-SV</item>
+        <item>es-ES</item>
+        <item>es-US</item>
+        <item>es-GT</item>
+        <item>es-HN</item>
+        <item>es-MX</item>
+        <item>es-NI</item>
+        <item>es-PA</item>
+        <item>es-PY</item>
+        <item>es-PE</item>
+        <item>es-PR</item>
+        <item>es-DO</item>
+        <item>es-UY</item>
+        <item>es-VE</item>
+        <item>eu-ES</item>
+        <item>fil-PH</item>
+        <item>fr-CA</item>
+        <item>fr-FR</item>
+        <item>gl-ES</item>
+        <item>hr-HR</item>
+        <item>zu-ZA</item>
+        <item>is-IS</item>
+        <item>it-IT</item>
+        <item>lt-LT</item>
+        <item>hu-HU</item>
+        <item>nl-NL</item>
+        <item>nb-NO</item>
+        <item>pl-PL</item>
+        <item>pt-BR</item>
+        <item>pt-PT</item>
+        <item>ro-RO</item>
+        <item>sk-SK</item>
+        <item>sl-SI</item>
+        <item>fi-FI</item>
+        <item>sv-SE</item>
+        <item>vi-VN</item>
+        <item>tr-TR</item>
+        <item>el-GR</item>
+        <item>bg-BG</item>
+        <item>ru-RU</item>
+        <item>sr-RS</item>
+        <item>uk-UA</item>
+        <item>he-IL</item>
+        <item>ar-IL</item>
+        <item>ar-JO</item>
+        <item>ar-AE</item>
+        <item>ar-BH</item>
+        <item>ar-DZ</item>
+        <item>ar-SA</item>
+        <item>ar-IQ</item>
+        <item>ar-KW</item>
+        <item>ar-MA</item>
+        <item>ar-TN</item>
+        <item>ar-OM</item>
+        <item>ar-PS</item>
+        <item>ar-QA</item>
+        <item>ar-LB</item>
+        <item>ar-EG</item>
+        <item>fa-IR</item>
+        <item>hi-IN</item>
+        <item>th-TH</item>
+        <item>ko-KR</item>
+        <item>cmn-Hant-TW</item>
+        <item>yue-Hant-HK</item>
+        <item>ja-JP</item>
+        <item>cmn-Hans-HK</item>
+        <item>cmn-Hans-CN</item>
+    </string-array>
+</resources>

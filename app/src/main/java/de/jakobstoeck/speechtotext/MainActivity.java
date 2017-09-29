@@ -6,15 +6,20 @@ import android.content.Intent;
 import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
-    private SpeechService mSpeechService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
         setContentView(R.layout.activity_main);
+
+        getFragmentManager().beginTransaction()
+                .replace(android.R.id.content, new SettingsFragment())
+                .commit();
     }
 
     @Override
@@ -29,8 +34,8 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onResume() {
-        // TODO get audio file
         super.onResume();
+
         Intent intent = getIntent();
         String type = intent.getType();
 
@@ -50,19 +55,12 @@ public class MainActivity extends AppCompatActivity {
                         .appendPath(resources.getResourceTypeName(resourceId))
                         .appendPath(resources.getResourceEntryName(resourceId))
                         .build();
+                serviceIntent.setType("audio/ogg");
                 serviceIntent.putExtra(Intent.EXTRA_STREAM, uri);
             }
             startService(serviceIntent);
             setResult(Activity.RESULT_OK);
             finish();
         }
-    }
-
-    protected void handleAudio() {
-
-    }
-
-    protected void handleIntent(Intent intent) {
-
     }
 }
