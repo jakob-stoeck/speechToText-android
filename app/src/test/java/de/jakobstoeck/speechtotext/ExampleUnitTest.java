@@ -2,6 +2,8 @@ package de.jakobstoeck.speechtotext;
 
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * Example local unit test, which will execute on the development machine (host).
  *
@@ -9,6 +11,8 @@ import org.junit.Test;
  */
 public class ExampleUnitTest {
     @Test
-    public void recognitionWorks() throws Exception {
+    public void mimeTypeNormalization() {
+        assertEquals("audio/ogg", SpeechService.compatNormalizeMimeType("audio/ogg; codecs=opus"));
+        assertEquals("audio/amr-wb", SpeechService.compatNormalizeMimeType("audio/amr-wb codecs=xxx"));
     }
 }

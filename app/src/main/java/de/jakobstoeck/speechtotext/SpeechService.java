@@ -66,6 +66,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import io.grpc.CallOptions;
 import io.grpc.Channel;
@@ -241,7 +243,6 @@ public class SpeechService extends IntentService {
             mChannel.setDescription(description);
             mChannel.enableLights(false);
             mChannel.enableVibration(false);
-            mChannel.setImportance(NotificationManager.IMPORTANCE_LOW);
             mNotificationManager.createNotificationChannel(mChannel);
         }
         return id;
@@ -391,10 +392,20 @@ public class SpeechService extends IntentService {
         mRequestObserver = null;
     }
 
-    public void recognizeUri(Uri uri, String type) {
+    static String compatNormalizeMimeType(String type) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            type = Intent.normalizeMimeType(type);
+            return Intent.normalizeMimeType(type);
+        } else {
+            Pattern pattern = Pattern.compile("[a-z]+/[a-z.0-9-]+");
+            Matcher matcher = pattern.matcher(type.trim().toLowerCase());
+            if (matcher.find()) {
+                return matcher.group();
+            } else return type;
         }
+    }
+
+    public void recognizeUri(Uri uri, String type) {
+        type = compatNormalizeMimeType(type);
         RecognitionConfig.AudioEncoding encoding;
         switch (type) {
             case "audio/ogg":
