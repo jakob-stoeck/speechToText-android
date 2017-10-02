@@ -53,23 +53,10 @@ public class ExampleInstrumentedTest {
     @After
     public void end() {
         final long finish = System.nanoTime() - start;
-        System.out.println("It took so many milliseconds: " + TimeUnit.MILLISECONDS.convert(finish, TimeUnit.NANOSECONDS));
+        System.out.println(String.format("It took so many milliseconds: %d\n", TimeUnit.MILLISECONDS.convert(finish, TimeUnit.NANOSECONDS)));
     }
 
-    @Test
-    public void recognizeFileTestJson() throws IOException {
-        final InputStream in = InstrumentationRegistry.getContext().getClassLoader().getResourceAsStream("test.opus");
-        String result = SpeechRecognizerJsonClient.recognizeFile(in);
-        in.close();
-        assertEquals("oh wie schön Paris", result);
-    }
-
-    @Test
-    public void recognizeFileTestRpc() throws TimeoutException, InterruptedException, IOException {
-        final CountDownLatch speechWasRecognized = new CountDownLatch(1);
-
-        // audio file to test
-        int resourceId = R.raw.test;
+    private Uri getUriFromResourceId(int resourceId) {
         final Resources resources = InstrumentationRegistry.getTargetContext().getResources();
         Uri uri = new Uri.Builder()
                 .scheme(ContentResolver.SCHEME_ANDROID_RESOURCE)
@@ -77,7 +64,24 @@ public class ExampleInstrumentedTest {
                 .appendPath(resources.getResourceTypeName(resourceId))
                 .appendPath(resources.getResourceEntryName(resourceId))
                 .build();
+        return uri;
+    }
 
+    @Test
+    public void recognizeFileTestJson() throws IOException {
+        final Uri uri = getUriFromResourceId(R.raw.test);
+        final InputStream in = InstrumentationRegistry.getContext().getContentResolver().openInputStream(uri);
+        String result = SpeechRecognizerJsonClient.recognizeFile(in);
+        in.close();
+        assertEquals("hallo das ist ein Test", result);
+    }
+
+    @Test
+    public void recognizeFileTestRpc() throws TimeoutException, InterruptedException, IOException {
+        final CountDownLatch speechWasRecognized = new CountDownLatch(1);
+
+        // audio file to test
+        final Uri uri = getUriFromResourceId(R.raw.test);
         final String[] transcribedText = new String[1];
 
         // callback listener when service responds
