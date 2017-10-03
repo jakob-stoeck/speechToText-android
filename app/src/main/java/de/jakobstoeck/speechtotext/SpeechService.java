@@ -16,11 +16,11 @@
 
 package de.jakobstoeck.speechtotext;
 
-import android.app.IntentService;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -52,7 +52,6 @@ import com.google.cloud.speech.v1.StreamingRecognizeResponse;
 import com.google.protobuf.ByteString;
 
 import java.io.BufferedInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -100,11 +99,7 @@ import io.grpc.stub.StreamObserver;
  *     startService(serviceIntent);
  * </pre></blockquote></p>
  */
-public class SpeechService extends IntentService {
-
-    public SpeechService() {
-        super("SpeechService");
-    }
+public class SpeechService extends Service {
 
     public interface Listener {
 
@@ -249,7 +244,7 @@ public class SpeechService extends IntentService {
     }
 
     @Override
-    protected void onHandleIntent(@Nullable Intent intent) {
+    public int onStartCommand(Intent intent, int flags, int startId) {
         Intent notificationIntent = new Intent(this, MainActivity.class);
         final PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
         final String channelId = createNotificationChannel();
@@ -260,27 +255,36 @@ public class SpeechService extends IntentService {
         // .setPriority(NotificationCompat.PRIORITY_MAX), .setDefaults(0), .setSound(null) or
         // .setImportance(NotificationManager.IMPORTANCE_LOW) on the channel. Nothing works.
         Notification notification = new NotificationCompat.Builder(this, channelId)
-                .setSmallIcon(R.drawable.notification_icon)
+                .setSmallIcon(R.drawable.ic_stat_name)
                 .setContentTitle(getResources().getString(R.string.notification_title, curLanguage))
                 .setContentText(getResources().getText(R.string.notification_text_please_wait))
                 .setContentIntent(pendingIntent)
                 .setDefaults(0)
                 .setSound(null)
+                .setStyle(new NotificationCompat.BigTextStyle())
                 .setOnlyAlertOnce(true)
                 .setTicker(getResources().getText(R.string.app_name))
                 .build();
         addListener(new Listener() {
             @Override
             public void onSpeechRecognized(String text, boolean isFinal) {
+                if (isFinal) {
+                    SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(SpeechService.this);
+                    SharedPreferences.Editor editor = sharedPref.edit();
+                    editor.putString(getString(R.string.last_message_transcription), text);
+                    editor.apply();
+                }
                 Notification notification = new NotificationCompat.Builder(SpeechService.this, channelId)
-                        .setSmallIcon(R.drawable.notification_icon)
+                        .setSmallIcon(R.drawable.ic_stat_name)
                         .setContentTitle(getResources().getString(R.string.notification_title, curLanguage))
                         .setContentText(text)
                         .setContentIntent(pendingIntent)
                         .setDefaults(0)
                         .setSound(null)
+                        .setStyle(new NotificationCompat.BigTextStyle().bigText(text))
                         .setOnlyAlertOnce(true)
                         .build();
+                notification.flags |= Notification.FLAG_AUTO_CANCEL;
                 NotificationManager mNotifyMgr = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
                 mNotifyMgr.notify(notificationId, notification);
             }
@@ -288,6 +292,7 @@ public class SpeechService extends IntentService {
         startForeground(notificationId, notification);
         Uri uri = (Uri) intent.getExtras().get(Intent.EXTRA_STREAM);
         recognizeUri(uri, intent.getType());
+        return START_NOT_STICKY;
     }
 
     private void fetchAccessToken() {
@@ -429,14 +434,13 @@ public class SpeechService extends IntentService {
                 Log.e(TAG, "MIME Type not supported: " + type);
                 return;
         }
+
         try {
             InputStream bin = new BufferedInputStream(getContentResolver().openInputStream(uri));
             recognizeInputStream(bin, encoding);
             bin.close();
-        } catch (FileNotFoundException e) {
-            Log.e(TAG, "Could not open audio file", e);
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.e(TAG, "Could not open audio file", e);
         }
     }
 
