@@ -29,7 +29,6 @@
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="text/plain" /> <!-- TODO remove when finished testing -->
                 <data android:mimeType="audio/*" />
             </intent-filter>
         </activity>
