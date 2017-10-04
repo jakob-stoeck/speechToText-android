@@ -41,10 +41,8 @@ import com.google.auth.Credentials;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.speech.v1.RecognitionConfig;
-import com.google.cloud.speech.v1.RecognizeResponse;
 import com.google.cloud.speech.v1.SpeechGrpc;
 import com.google.cloud.speech.v1.SpeechRecognitionAlternative;
-import com.google.cloud.speech.v1.SpeechRecognitionResult;
 import com.google.cloud.speech.v1.StreamingRecognitionConfig;
 import com.google.cloud.speech.v1.StreamingRecognitionResult;
 import com.google.cloud.speech.v1.StreamingRecognizeRequest;
@@ -164,36 +162,6 @@ public class SpeechService extends Service {
         @Override
         public void onCompleted() {
             Log.i(TAG, "API completed.");
-        }
-
-    };
-
-    private final StreamObserver<RecognizeResponse> mFileResponseObserver
-            = new StreamObserver<RecognizeResponse>() {
-        @Override
-        public void onNext(RecognizeResponse response) {
-            String text = null;
-            if (response.getResultsCount() > 0) {
-                final SpeechRecognitionResult result = response.getResults(0);
-                if (result.getAlternativesCount() > 0) {
-                    final SpeechRecognitionAlternative alternative = result.getAlternatives(0);
-                    text = alternative.getTranscript();
-                }
-            }
-            if (text != null) {
-                for (Listener listener : mListeners) {
-                    listener.onSpeechRecognized(text, true);
-                }
-            }
-        }
-
-        @Override
-        public void onError(Throwable t) {
-            Log.e(TAG, "Error calling the API.", t);
-        }
-
-        @Override
-        public void onCompleted() {
             Log.i(TAG, "API completed.");
             mHandler.removeCallbacks(mFetchAccessTokenRunnable);
             mHandler = null;
@@ -395,6 +363,7 @@ public class SpeechService extends Service {
         }
         mRequestObserver.onCompleted();
         mRequestObserver = null;
+        stopSelf();
     }
 
     static String compatNormalizeMimeType(String type) {
